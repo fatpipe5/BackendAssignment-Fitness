@@ -4,10 +4,14 @@ import path from 'path'
 import fs from 'fs'
 import { Sequelize } from 'sequelize'
 
+
 import defineExercise from './exercise'
 import defineProgram from './program'
+import defineUser from './user'
 
-const sequelize: Sequelize = new Sequelize('postgresql://localhost:5432/fitness_app', {
+
+
+const sequelize: Sequelize = new Sequelize('postgresql://postgres:heslo@localhost:5432/fitness_app', {
 	logging: false
 })
 
@@ -17,6 +21,7 @@ const modelsBuilder = (instance: Sequelize) => ({
 	// Import models to sequelize
 	Exercise: instance.import(path.join(__dirname, 'exercise'), defineExercise),
 	Program: instance.import(path.join(__dirname, 'program'), defineProgram),
+	User: instance.import(path.join(__dirname, 'user'), defineUser),
 })
 
 const models = modelsBuilder(sequelize)

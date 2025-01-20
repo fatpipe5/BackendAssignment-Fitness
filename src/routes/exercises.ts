@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express'
-
+import passport from '../config/passportConfig'  // import the configured passport
 import { models } from '../db'
 
 const router: Router = Router()
@@ -10,7 +10,7 @@ const {
 } = models
 
 export default () => {
-	router.get('/', async (_req: Request, res: Response, _next: NextFunction) => {
+	router.get('/', passport.authenticate('jwt', { session: false }), async (_req: Request, res: Response, _next: NextFunction) => {
 		const exercises = await Exercise.findAll({
 			include: [{
 				model: Program,
