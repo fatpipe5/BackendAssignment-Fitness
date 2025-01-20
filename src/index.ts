@@ -10,7 +10,7 @@ import ProgramRouter from './routes/programs'
 import ExerciseRouter from './routes/exercises'
 import authRouter from './routes/auth'
 import passport from './config/passportConfig'
-
+import userRouter from './routes/users';
 const app = express()
 
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -19,6 +19,7 @@ app.use(passport.initialize())
 app.use('/programs', ProgramRouter())
 app.use('/exercises', ExerciseRouter())
 app.use('/auth', authRouter)
+app.use('/users', userRouter());
 
 
 const httpServer = http.createServer(app)
