@@ -2,12 +2,32 @@ import { Router, Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { models } from '../db'
+import { check, validationResult } from 'express-validator';
 
 const router: Router = Router()
 const { User } = models
 
 // 2.1 REGISTER
-router.post('/register', async (req: Request, res: Response, _next: NextFunction) => {
+router.post('/register', [
+    // validacie
+    check('email')
+        .isEmail()
+        .withMessage('Invalid email format'),
+    check('password')
+        .isLength({ min: 6 })
+        .withMessage('Password must be at least 6 chars long'),
+    check('role')
+        .optional()
+        .isIn(['ADMIN', 'USER'])
+        .withMessage('Role must be either ADMIN or USER'),
+
+    ], async (req: Request, res: Response, _next: NextFunction) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    // ak nie su ziadna validacne chyby, pokracujeme dalej s vytvorenim usera
     try {
         const { name, surname, nickName, email, password, role } = req.body
 

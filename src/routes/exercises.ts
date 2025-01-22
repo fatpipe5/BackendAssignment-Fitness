@@ -3,6 +3,7 @@ import passport from '../config/passportConfig'  // import the configured passpo
 import { models } from '../db'
 import { isAdmin } from '../middleware/roleCheck';
 import { Op } from 'sequelize';
+import {query, validationResult} from "express-validator";
 
 const router: Router = Router()
 
@@ -12,7 +13,27 @@ const {
 } = models
 
 export default () => {
-	router.get('/', async (req: Request, res: Response, _next: NextFunction) => {
+	router.get('/', [
+		query('page')
+			.optional()
+			.isInt({ gt: 0 })
+			.withMessage('page must be an integer > 0'),
+		query('limit')
+			.optional()
+			.isInt({ gt: 0 })
+			.withMessage('limit must be an integer > 0'),
+		query('programID')
+			.optional()
+			.isInt({ gt: 0 })
+			.withMessage('programID must be an integer > 0'),
+	],
+		async (req: Request, res: Response, _next: NextFunction) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+
 		try {
 			const { page, limit, programID, search } = req.query;
 
