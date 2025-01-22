@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express'
 import passport from '../config/passportConfig'  // import the configured passport
 import { models } from '../db'
 import { isAdmin } from '../middleware/roleCheck';
+import { Op } from 'sequelize';
 
 const router: Router = Router()
 
@@ -11,21 +12,55 @@ const {
 } = models
 
 export default () => {
-	router.get('/', async (_req: Request, res: Response, _next: NextFunction) => {
-		const exercises = await Exercise.findAll({
-			include: [{
-				model: Program,
-				as: 'program'
-			}]
-		})
+	router.get('/', async (req: Request, res: Response, _next: NextFunction) => {
+		try {
+			const { page, limit, programID, search } = req.query;
 
-		return res.json({
-			data: exercises,
-			message: 'List of exercises'
-		})
-	})
+			const pageNum = page ? parseInt(page as string, 10) : 1;
+			const limitNum = limit ? parseInt(limit as string, 10) : 10;
+			const offset = (pageNum - 1) * limitNum;
 
-	// CREATE /exercises - ADMIN only
+			const where: any = {};
+
+			if (programID) {
+				where.programID = programID;
+			}
+
+			if (search) {
+				where.name = {
+					[Op.iLike]: `%${search}%`
+				};
+			}
+
+			const result = await Exercise.findAndCountAll({
+				where,
+				include: [{ model: Program, as: 'program' }],
+				limit: limitNum,
+				offset: offset
+			});
+
+			// result.count = celkovy pocet vyhovujucich riadkov
+			// result.rows  = riadky pre aktualnu stranu
+
+			const totalItems = result.count;
+			const totalPages = Math.ceil(totalItems / limitNum);
+
+			return res.json({
+				data: result.rows,
+				meta: {
+					currentPage: pageNum,
+					limit: limitNum,
+					totalItems,
+					totalPages
+				}
+			});
+		} catch (error) {
+			console.error('Error in GET /exercises:', error);
+			return res.status(500).json({ message: 'Server error' });
+		}
+	});
+
+	// CREATE /exercises - iba ADMIN
 	router.post(
 		'/',
 		passport.authenticate('jwt', { session: false }),
