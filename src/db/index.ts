@@ -1,15 +1,10 @@
-/* eslint import/no-cycle: 0 */
-
 import path from 'path'
 import fs from 'fs'
 import { Sequelize } from 'sequelize'
-
-
 import defineExercise from './exercise'
 import defineProgram from './program'
 import defineUser from './user'
-
-
+import defineCompletedExercise from './completedExercise'
 
 const sequelize: Sequelize = new Sequelize('postgresql://postgres:heslo@localhost:5432/fitness_app', {
 	logging: false
@@ -17,25 +12,31 @@ const sequelize: Sequelize = new Sequelize('postgresql://postgres:heslo@localhos
 
 sequelize.authenticate().catch((e: any) => console.error(`Unable to connect to the database${e}.`))
 
-const modelsBuilder = (instance: Sequelize) => ({
-	// Import models to sequelize
-	Exercise: instance.import(path.join(__dirname, 'exercise'), defineExercise),
-	Program: instance.import(path.join(__dirname, 'program'), defineProgram),
-	User: instance.import(path.join(__dirname, 'user'), defineUser),
-})
+// inicializacia modelov
+const modelsBuilder = (instance: Sequelize) => {
+	const Exercise = defineExercise(instance);
+	const Program = defineProgram(instance);
+	const User = defineUser(instance);
+	const CompletedExercise = defineCompletedExercise(instance);
 
-const models = modelsBuilder(sequelize)
+	return {
+		Exercise,
+		Program,
+		User,
+		CompletedExercise
+	};
+};
 
-// check if every model is imported
+const models = modelsBuilder(sequelize);
+
 const modelsFiles = fs.readdirSync(__dirname)
-// -1 because index.ts can not be counted
 if (Object.keys(models).length !== (modelsFiles.length - 1)) {
 	throw new Error('You probably forgot import database model!')
 }
 
-Object.values(models).forEach((value: any) => {
-	if (value.associate) {
-		value.associate(models)
+Object.values(models).forEach((model: any) => {
+	if (model.associate) {
+		model.associate(models)
 	}
 })
 
